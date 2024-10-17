@@ -1,0 +1,11 @@
+[binaries]
+c = 'gcc'
+cpp = 'g++'
+ar = 'ar'
+strip = 'strip'
+
+[host_machine]
+system = 'linux'
+cpu_family = 'x86'
+cpu = 'x86'
+endian = 'little'

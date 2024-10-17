@@ -1,0 +1,38 @@
+
+# local files
+.local/
+
+# vs code
+.vscode/
+*.code-workspace
+
+# objects
+source/quakegeneric
+
+# game data
+source/id1/
+
+# object files
+*.o
+*.exe
+*.a
+*.obj
+*.rsp
+*.err
+
+# vim
+*.swp
+
+# cscope
+cscope.in.out
+cscope.out
+cscope.po.out
+
+# dosbox-x
+dosbox-x.*
+
+# cmake
+cmake-build*
+
+# meson
+meson-build*
