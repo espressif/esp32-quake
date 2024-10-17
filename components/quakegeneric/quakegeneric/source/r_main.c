@@ -921,10 +921,9 @@ R_RenderView
 r_refdef must be set before the first call
 ================
 */
-void R_RenderView_ (void)
-{
-	byte	warpbuffer[WARP_WIDTH * WARP_HEIGHT];
 
+void R_RenderView_ (byte *warpbuffer)
+{
 	r_warpbuffer = warpbuffer;
 
 	if (r_timegraph.value || r_speeds.value || r_dspeeds.value)
@@ -1017,11 +1016,18 @@ SetVisibilityByPassages ();
 	Sys_HighFPPrecision ();
 }
 
+static int in_renderview=0;
+static byte	*my_warpbuffer;
+
 void R_RenderView (void)
 {
 	int		dummy;
 	int		delta;
+	assert(in_renderview==0);
+	in_renderview=1;
 	
+	if (!my_warpbuffer) my_warpbuffer=calloc(WARP_WIDTH * WARP_HEIGHT, sizeof(char));
+
 	delta = (byte *)&dummy - r_stack_start;
 	if (delta < -10000 || delta > 10000)
 		Sys_Error ("R_RenderView: called without enough stack");
@@ -1035,7 +1041,8 @@ void R_RenderView (void)
 	if ( (intptr_t)(&r_warpbuffer) & 3 )
 		Sys_Error ("Globals are missaligned");
 
-	R_RenderView_ ();
+	R_RenderView_ (my_warpbuffer);
+	in_renderview=0;
 }
 
 /*

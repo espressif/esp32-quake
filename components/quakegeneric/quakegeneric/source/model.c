@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 #include "r_local.h"
+#include "esp_attr.h"
 
 model_t	*loadmodel;
 char	loadname[32];	// for hunk tags
@@ -36,7 +37,7 @@ model_t *Mod_LoadModel (model_t *mod, qboolean crash);
 byte	mod_novis[MAX_MAP_LEAFS/8];
 
 #define	MAX_MOD_KNOWN	256
-model_t	mod_known[MAX_MOD_KNOWN];
+EXT_RAM_BSS_ATTR model_t	mod_known[MAX_MOD_KNOWN];
 int		mod_numknown;
 
 // values for model_t's needload
