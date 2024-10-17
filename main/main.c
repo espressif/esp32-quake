@@ -10,6 +10,9 @@
 #include "esp_timer.h"
 #include "quakegeneric.h"
 #include "soc/mipi_dsi_bridge_struct.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/semphr.h"
 
 esp_lcd_panel_handle_t panel_handle = NULL;
 esp_lcd_panel_io_handle_t io_handle = NULL;
@@ -36,31 +39,52 @@ void QG_Quit(void) {
 }
 
 uint16_t pal[768];
-
+uint8_t *cur_pixels;
 uint16_t *lcdbuf[2]={};
 int cur_buf=1;
 
+static TaskHandle_t draw_task_handle;
+static SemaphoreHandle_t drawing_mux;
+
+
 void QG_DrawFrame(void *pixels) {
-	// convert pixels
-	uint8_t *p=(uint8_t*)pixels;
-	uint16_t *lcdp=lcdbuf[cur_buf];
-	//Convert LCD buffer addresses to uncached addresses. We don't need to have it pollute cache as
-	//we do a linear write to it.
-	lcdp=(uint16_t*)((uint32_t)lcdp+0x40000000U);
+	xSemaphoreTake(drawing_mux, portMAX_DELAY);
+	cur_pixels=pixels;
+	xSemaphoreGive(drawing_mux);
+	xTaskNotifyGive(draw_task_handle);
+}
 
-	for (int y=0; y<QUAKEGENERIC_RES_Y*QUAKEGENERIC_RES_SCALE; y++) {
-		uint8_t *srcline=&p[(y/QUAKEGENERIC_RES_SCALE)*QUAKEGENERIC_RES_X];
-		for (int x=0; x<QUAKEGENERIC_RES_X; x++) {
-			for (int rep=0; rep<QUAKEGENERIC_RES_SCALE; rep++) {
-				*lcdp++=pal[*srcline];
+void draw_task(void *param) {
+	while(1) {
+		ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+		
+		xSemaphoreTake(drawing_mux, portMAX_DELAY);
+		int64_t start_us = esp_timer_get_time();
+		// convert pixels
+		uint8_t *p=(uint8_t*)cur_pixels;
+		uint16_t *lcdp=lcdbuf[cur_buf];
+		//Convert LCD buffer addresses to uncached addresses. We don't need to have it pollute cache as
+		//we do a linear write to it.
+//		lcdp=(uint16_t*)((uint32_t)lcdp+0x40000000U);
+
+		for (int y=0; y<QUAKEGENERIC_RES_Y*QUAKEGENERIC_RES_SCALE; y++) {
+			uint8_t *srcline=&p[(y/QUAKEGENERIC_RES_SCALE)*QUAKEGENERIC_RES_X];
+			for (int x=0; x<QUAKEGENERIC_RES_X; x++) {
+				for (int rep=0; rep<QUAKEGENERIC_RES_SCALE; rep++) {
+					*lcdp++=pal[*srcline];
+				}
+				srcline++;
 			}
-			srcline++;
 		}
+		xSemaphoreGive(drawing_mux);
+		//do a draw to trigger fb flip
+		esp_lcd_panel_draw_bitmap(panel_handle, 0, 0, 1, 1, lcdbuf[cur_buf]);
+		cur_buf=cur_buf?0:1;
+		int64_t end_us = esp_timer_get_time();
+#if 0
+		printf("LCD Fps: %02f\n", 1000000.0/(end_us-start_us));
+#endif
 	}
-
-	//do a draw to trigger fb flip
-	esp_lcd_panel_draw_bitmap(panel_handle, 0, 0, 1, 1, lcdbuf[cur_buf]);
-	cur_buf=cur_buf?0:1;
 }
 
 void QG_SetPalette(unsigned char palette[768]) {
@@ -113,11 +137,13 @@ void app_main() {
 
 	ESP_ERROR_CHECK(esp_lcd_dpi_panel_get_frame_buffer(panel_handle, 2, (void**)&lcdbuf[0], (void**)&lcdbuf[1]));
 
+	drawing_mux=xSemaphoreCreateMutex();
 	int stack_depth=200*1024;
 	
 	StaticTask_t *taskbuf=calloc(sizeof(StaticTask_t), 1);
 	uint8_t *stackbuf=calloc(stack_depth, 1);
 	xTaskCreateStaticPinnedToCore(quake_task, "quake", stack_depth, NULL, 5, (StackType_t*)stackbuf, taskbuf, 0);
+	xTaskCreatePinnedToCore(draw_task, "draw", 4096, NULL, 5, &draw_task_handle, 1);
 }
 
 

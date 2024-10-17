@@ -29,12 +29,10 @@ viddef_t	vid;				// global video state
 #define	BASEWIDTH	QUAKEGENERIC_RES_X
 #define	BASEHEIGHT	QUAKEGENERIC_RES_Y
 
-//byte	vid_buffer[BASEWIDTH*BASEHEIGHT];
-//short	zbuffer[BASEWIDTH*BASEHEIGHT];
-byte	*vid_buffer;
-short	*zbuffer;
-byte	*surfcache;
-size_t	surfcache_size;
+static byte	*vid_buffer[2];
+static short	*zbuffer;
+static byte	*surfcache;
+static size_t	surfcache_size;
 
 void	VID_SetPalette (unsigned char *palette)
 {
@@ -51,14 +49,15 @@ void	VID_ShiftPalette (unsigned char *palette)
 void	VID_Init (unsigned char *palette)
 {
 	zbuffer = calloc(BASEWIDTH*BASEHEIGHT, sizeof(short));
-	vid_buffer = calloc(BASEWIDTH*BASEHEIGHT, sizeof(byte));
+	vid_buffer[0] = calloc(BASEWIDTH*BASEHEIGHT, sizeof(byte));
+	vid_buffer[1] = calloc(BASEWIDTH*BASEHEIGHT, sizeof(byte));
 	vid.maxwarpwidth = vid.width = vid.conwidth = BASEWIDTH;
 	vid.maxwarpheight = vid.height = vid.conheight = BASEHEIGHT;
 	vid.aspect = 1.0;
-	vid.numpages = 1;
+	vid.numpages = 2;
 	vid.colormap = host_colormap;
 	vid.fullbright = 256 - LittleLong (*((int *)vid.colormap + 2048));
-	vid.buffer = vid.conbuffer = vid_buffer;
+	vid.buffer = vid.conbuffer = vid_buffer[0];
 	vid.rowbytes = vid.conrowbytes = BASEWIDTH;
 	
 	d_pzbuffer = zbuffer;
@@ -80,6 +79,13 @@ void	VID_Update (vrect_t *rects)
 {
 	// quake generic
 	QG_DrawFrame(vid.buffer);
+	//swap buffers
+	if (vid.buffer == vid_buffer[0]) {
+		vid.buffer = vid_buffer[1];
+	} else {
+		vid.buffer = vid_buffer[0];
+	}
+	vid.conbuffer=vid.buffer;
 }
 
 /*
