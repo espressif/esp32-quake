@@ -1,4 +1,4 @@
-idf_component_register(SRCS "main.c" "usb_hid.c" "hid_ev.c" "audio.c"
+idf_component_register(SRCS "main.c" "usb_hid.c" "hid_ev.c" "audio.c" "cd_cue.c"
 					"libusbhid/descr.c" "libusbhid/parse.c"
 					"libusbhid/usage_tables.c" "libusbhid/data.c"
                     INCLUDE_DIRS "."
@@ -6,4 +6,4 @@ idf_component_register(SRCS "main.c" "usb_hid.c" "hid_ev.c" "audio.c"
 
 #hack: otherwise audio.c is not linked
 #should actually factor refactor all things called by quake into a separate component
-target_link_libraries(${COMPONENT_LIB} INTERFACE "-u snd_inited")
+target_link_libraries(${COMPONENT_LIB} INTERFACE "-u snd_inited -u CDAudio_Init")

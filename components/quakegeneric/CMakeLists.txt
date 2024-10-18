@@ -3,7 +3,6 @@ cmake_minimum_required(VERSION 3.5)
 set(QUAKE_SOURCE_DIR quakegeneric)
 
 set(QUAKEGENERIC_SOURCES
-	${QUAKE_SOURCE_DIR}/source/cd_null.c
 	${QUAKE_SOURCE_DIR}/source/chase.c
 	${QUAKE_SOURCE_DIR}/source/cl_demo.c
 	${QUAKE_SOURCE_DIR}/source/cl_input.c

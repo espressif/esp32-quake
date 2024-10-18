@@ -41,13 +41,24 @@ unsigned char dma_buffer[BUFFER_SIZE];
 
 int dma_rpos;
 
+void CDAudio_get_samps(char *samps, int len_bytes);
+
+#define CHUNKSZ (BUFFER_SIZE/8)
 void audio_task(void *param) {
 	//simulate DMA to audio; just write the DMA buffer in a circular fashion.
-	int chunksz=BUFFER_SIZE/8;
+	int16_t mix_buf[CHUNKSZ/2];
 	while(1) {
-		int old_rpos=dma_rpos;
-		dma_rpos=(dma_rpos + chunksz) % BUFFER_SIZE;
-		esp_codec_dev_write(spk_codec_dev, &dma_buffer[old_rpos], chunksz);
+		CDAudio_get_samps((char*)mix_buf, CHUNKSZ);
+		int16_t *digaudio=(int16_t*)&dma_buffer[dma_rpos];
+		//Mix CD audio and digi samples
+		for (int i=0; i<CHUNKSZ/2; i++) {
+			int a=mix_buf[i];
+			int b=digaudio[i];
+			int mixed=(a*24)+(b*8);
+			mix_buf[i]=mixed/32;
+		}
+		dma_rpos=(dma_rpos + CHUNKSZ) % BUFFER_SIZE;
+		esp_codec_dev_write(spk_codec_dev, mix_buf, CHUNKSZ);
 	}
 }
 
