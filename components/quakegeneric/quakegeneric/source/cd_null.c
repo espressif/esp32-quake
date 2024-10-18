@@ -19,6 +19,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include "quakedef.h"
 
+/*
+Note: The GOG release of the game includes the CDs as cue/gog (actually cue/bin) files
+which contains the raw audio as 16-bit signed LE 44100KHz audio. We can simply open those
+and use the track timecode to seek to the correct place, then play the track raw.
+*/
+
 void CDAudio_Play(byte track, qboolean looping)
 {
 }

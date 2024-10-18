@@ -59,7 +59,9 @@ set(QUAKEGENERIC_SOURCES
 	${QUAKE_SOURCE_DIR}/source/r_vars.c
 	${QUAKE_SOURCE_DIR}/source/sbar.c
 	${QUAKE_SOURCE_DIR}/source/screen.c
-	${QUAKE_SOURCE_DIR}/source/snd_null.c
+	${QUAKE_SOURCE_DIR}/source/snd_dma.c
+	${QUAKE_SOURCE_DIR}/source/snd_mem.c
+	${QUAKE_SOURCE_DIR}/source/snd_mix.c
 	${QUAKE_SOURCE_DIR}/source/sv_main.c
 	${QUAKE_SOURCE_DIR}/source/sv_move.c
 	${QUAKE_SOURCE_DIR}/source/sv_phys.c

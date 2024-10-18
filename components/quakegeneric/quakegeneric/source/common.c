@@ -26,7 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 static char     *largv[MAX_NUM_ARGVS + NUM_SAFE_ARGVS + 1];
 static char     *argvdummy = " ";
 
-static char     *safeargvs[NUM_SAFE_ARGVS] =
+const static char     *safeargvs[NUM_SAFE_ARGVS] =
 	{"-stdvid", "-nolan", "-nosound", "-nocdaudio", "-nojoy", "-nomouse", "-dibonly"};
 
 cvar_t  registered = {"registered","0"};
