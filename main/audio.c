@@ -27,7 +27,7 @@
 #endif
 #define BSP_POWER_AMP_IO        (GPIO_NUM_53)
 
-#define DEFAULT_VOLUME 20
+#define DEFAULT_VOLUME 35
 
 static i2s_chan_handle_t i2s_tx_chan = NULL;
 static const audio_codec_data_if_t *i2s_data_if = NULL;
@@ -54,7 +54,7 @@ void audio_task(void *param) {
 		for (int i=0; i<CHUNKSZ/2; i++) {
 			int a=mix_buf[i];
 			int b=digaudio[i];
-			int mixed=(a*24)+(b*8);
+			int mixed=(a*16)+(b*16); //set mix ratio between cd music and game audio here
 			mix_buf[i]=mixed/32;
 		}
 		dma_rpos=(dma_rpos + CHUNKSZ) % BUFFER_SIZE;
