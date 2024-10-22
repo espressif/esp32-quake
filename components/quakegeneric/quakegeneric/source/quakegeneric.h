@@ -23,10 +23,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakekeys.h"
 
-//#define QUAKEGENERIC_RES_X 320
-//#define QUAKEGENERIC_RES_Y 240
 
 #define QUAKEGENERIC_RES_SCALE 2
+
+//for comparison with e.g. https://thandor.net/benchmark/33
+//in game, press tilde, then 'timedemo demo3'
+//#define QUAKEGENERIC_RES_X (320)
+//#define QUAKEGENERIC_RES_Y (200)
+
 
 #define QUAKEGENERIC_RES_X (1024/QUAKEGENERIC_RES_SCALE)
 #define QUAKEGENERIC_RES_Y (600/QUAKEGENERIC_RES_SCALE)

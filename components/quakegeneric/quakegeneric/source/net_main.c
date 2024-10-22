@@ -371,6 +371,7 @@ qsocket_t *NET_Connect (char *host)
 	int				n;
 	int				numdrivers = net_numdrivers;
 
+	printf("NET_Connect %s\n", host);
 	SetNetTime();
 
 	if (host && *host == 0)

@@ -1,4 +1,5 @@
 idf_component_register(SRCS "main.c" "usb_hid.c" "hid_ev.c" "audio.c" "cd_cue.c"
+					"eth_connect.c"
 					"libusbhid/descr.c" "libusbhid/parse.c"
 					"libusbhid/usage_tables.c" "libusbhid/data.c"
                     INCLUDE_DIRS "."

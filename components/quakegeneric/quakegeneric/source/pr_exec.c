@@ -19,7 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 #include "quakedef.h"
-
+#include "esp_attr.h"
 
 /*
 
@@ -36,7 +36,7 @@ prstack_t	pr_stack[MAX_STACK_DEPTH];
 int			pr_depth;
 
 #define	LOCALSTACK_SIZE		2048
-int			localstack[LOCALSTACK_SIZE];
+EXT_RAM_BSS_ATTR int			localstack[LOCALSTACK_SIZE];
 int			localstack_used;
 
 

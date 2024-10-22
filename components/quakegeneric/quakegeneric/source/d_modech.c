@@ -21,13 +21,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 #include "d_local.h"
+#include "esp_attr.h"
+
 
 int	d_vrectx, d_vrecty, d_vrectright_particle, d_vrectbottom_particle;
 
 int	d_y_aspect_shift, d_pix_min, d_pix_max, d_pix_shift;
 
-int		d_scantable[MAXHEIGHT];
-short	*zspantable[MAXHEIGHT]; 
+EXT_RAM_BSS_ATTR int		d_scantable[MAXHEIGHT];
+EXT_RAM_BSS_ATTR short	*zspantable[MAXHEIGHT]; 
 
 /*
 ================

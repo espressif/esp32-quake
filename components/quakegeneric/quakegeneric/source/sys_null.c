@@ -21,6 +21,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 #include "errno.h"
+#include <sys/stat.h>
+#include <sys/time.h>
 
 qboolean isDedicated;
 
@@ -135,6 +137,7 @@ int     Sys_FileTime (char *path)
 
 void Sys_mkdir (char *path)
 {
+    mkdir (path, 0777);
 }
 
 
@@ -180,11 +183,18 @@ void Sys_Quit (void)
 
 double Sys_FloatTime (void)
 {
-	static double t;
-	
-	t += 0.1;
-	
-	return t;
+    struct timeval tp;
+    static int      secbase; 
+    
+    gettimeofday(&tp, NULL);  
+
+    if (!secbase)
+    {
+        secbase = tp.tv_sec;
+        return tp.tv_usec/1000000.0;
+    }
+
+    return (tp.tv_sec - secbase) + tp.tv_usec/1000000.0;
 }
 
 char *Sys_ConsoleInput (void)

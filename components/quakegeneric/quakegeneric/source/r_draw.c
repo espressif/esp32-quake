@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "quakedef.h"
 #include "r_local.h"
 #include "d_local.h"	// FIXME: shouldn't need to include this
+#include "esp_attr.h"
 
 #define MAXLEFTCLIPEDGES		100
 
@@ -50,8 +51,8 @@ qboolean		r_leftclipped, r_rightclipped;
 static qboolean	makeleftedge, makerightedge;
 qboolean		r_nearzionly;
 
-int		sintable[SIN_BUFFER_SIZE];
-int		intsintable[SIN_BUFFER_SIZE];
+EXT_RAM_BSS_ATTR int		sintable[SIN_BUFFER_SIZE];
+EXT_RAM_BSS_ATTR int		intsintable[SIN_BUFFER_SIZE];
 
 mvertex_t	r_leftenter, r_leftexit;
 mvertex_t	r_rightenter, r_rightexit;

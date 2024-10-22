@@ -27,7 +27,7 @@
 #endif
 #define BSP_POWER_AMP_IO        (GPIO_NUM_53)
 
-#define DEFAULT_VOLUME 35
+#define DEFAULT_VOLUME 50
 
 static i2s_chan_handle_t i2s_tx_chan = NULL;
 static const audio_codec_data_if_t *i2s_data_if = NULL;
@@ -45,6 +45,7 @@ void CDAudio_get_samps(char *samps, int len_bytes);
 
 #define CHUNKSZ (BUFFER_SIZE/8)
 void audio_task(void *param) {
+	printf("audio task running\n");
 	//simulate DMA to audio; just write the DMA buffer in a circular fashion.
 	int16_t mix_buf[CHUNKSZ/2];
 	while(1) {
@@ -143,7 +144,6 @@ qboolean SNDDMA_Init(void)
 	shm = &sn;
 	shm->splitbuffer = 0;
 	shm->speed = 44100;
-	Con_Printf("16 bit stereo sound initialized\n");
 	shm->samplebits = 16;
 	shm->channels = 2;
 	shm->soundalive = true;
@@ -152,6 +152,7 @@ qboolean SNDDMA_Init(void)
 	shm->submission_chunk = 1;
 	shm->buffer = (unsigned char *)dma_buffer;
 	snd_inited = 1;
+	Con_Printf("16 bit stereo sound initialized\n");
 	xTaskCreatePinnedToCore(audio_task, "audio", 4096, NULL, 7, NULL, 1);
 	return 1;
 }

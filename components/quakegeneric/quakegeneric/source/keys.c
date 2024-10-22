@@ -18,6 +18,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 #include "quakedef.h"
+#include "esp_attr.h"
+
 
 /*
 
@@ -27,7 +29,7 @@ key up events are sent even if in console mode
 
 
 #define		MAXCMDLINE	256
-char	key_lines[32][MAXCMDLINE];
+EXT_RAM_BSS_ATTR char	key_lines[32][MAXCMDLINE];
 int		key_linepos;
 int		shift_down=false;
 int		key_lastpress;

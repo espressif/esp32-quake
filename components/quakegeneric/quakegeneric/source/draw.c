@@ -22,6 +22,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // vid buffer
 
 #include "quakedef.h"
+#include "esp_attr.h"
+
 
 typedef struct {
 	vrect_t	rect;
@@ -47,7 +49,7 @@ typedef struct cachepic_s
 } cachepic_t;
 
 #define	MAX_CACHED_PICS		128
-cachepic_t	menu_cachepics[MAX_CACHED_PICS];
+EXT_RAM_BSS_ATTR cachepic_t	menu_cachepics[MAX_CACHED_PICS];
 int			menu_numcachepics;
 
 

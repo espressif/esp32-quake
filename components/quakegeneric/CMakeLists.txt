@@ -36,7 +36,10 @@ set(QUAKEGENERIC_SOURCES
 	${QUAKE_SOURCE_DIR}/source/model.c
 	${QUAKE_SOURCE_DIR}/source/net_loop.c
 	${QUAKE_SOURCE_DIR}/source/net_main.c
-	${QUAKE_SOURCE_DIR}/source/net_none.c
+#	${QUAKE_SOURCE_DIR}/source/net_none.c
+	${QUAKE_SOURCE_DIR}/source/net_bsd.c
+	${QUAKE_SOURCE_DIR}/source/net_udp.c
+	${QUAKE_SOURCE_DIR}/source/net_dgrm.c
 	${QUAKE_SOURCE_DIR}/source/net_vcr.c
 	${QUAKE_SOURCE_DIR}/source/nonintel.c
 	${QUAKE_SOURCE_DIR}/source/pr_cmds.c

@@ -16,6 +16,7 @@
 #include "usb_hid.h"
 #include "usb_hid_keys.h"
 #include "quakekeys.h"
+#include "eth_connect.h"
 
 esp_lcd_panel_handle_t panel_handle = NULL;
 esp_lcd_panel_io_handle_t io_handle = NULL;
@@ -94,6 +95,14 @@ const uint16_t key_conv_tab[]={
 	[KEY_9]='9',
 	[KEY_0]='0',
 	[KEY_GRAVE]='`',
+	[KEY_DOT]='.',
+	[KEY_COMMA]=',',
+	[KEY_LEFTBRACE]='[',
+	[KEY_RIGHTBRACE]=']',
+	[KEY_BACKSLASH]='\\',
+	[KEY_SEMICOLON]=';',
+	[KEY_APOSTROPHE]='\'',
+	[KEY_SLASH]='/',
 };
 
 static int mouse_dx=0, mouse_dy=0;
@@ -141,7 +150,11 @@ void QG_GetMouseMove(int *x, int *y) {
 void QG_Quit(void) {
 }
 
+#if QUAKEGENERIC_RES_SCALE==2
+uint32_t pal[768];
+#else
 uint16_t pal[768];
+#endif
 uint8_t *cur_pixels;
 uint16_t *lcdbuf[2]={};
 int cur_buf=1;
@@ -166,11 +179,18 @@ void draw_task(void *param) {
 		// convert pixels
 		uint8_t *p=(uint8_t*)cur_pixels;
 		uint16_t *lcdp=lcdbuf[cur_buf];
-		//Convert LCD buffer addresses to uncached addresses. We don't need to have it pollute cache as
-		//we do a linear write to it.
-		//Nope - turns out this is slower.
-//		lcdp=(uint16_t*)((uint32_t)lcdp+0x40000000U);
 
+#if QUAKEGENERIC_RES_SCALE==2
+		//If we scale by 2, we can optimize by writing 32 bits at a time.
+		for (int y=0; y<QUAKEGENERIC_RES_Y*QUAKEGENERIC_RES_SCALE; y++) {
+			uint8_t *srcline=&p[(y/QUAKEGENERIC_RES_SCALE)*QUAKEGENERIC_RES_X];
+			uint32_t *dst=(uint32_t*)&lcdp[1024*y];
+			for (int x=0; x<QUAKEGENERIC_RES_X; x++) {
+				*dst++=pal[*srcline++];
+			}
+		}
+#else
+		//generic random scaling
 		for (int y=0; y<QUAKEGENERIC_RES_Y*QUAKEGENERIC_RES_SCALE; y++) {
 			uint8_t *srcline=&p[(y/QUAKEGENERIC_RES_SCALE)*QUAKEGENERIC_RES_X];
 			uint16_t *dst=&lcdp[1024*y];
@@ -181,12 +201,14 @@ void draw_task(void *param) {
 				srcline++;
 			}
 		}
+#endif
 		xSemaphoreGive(drawing_mux);
 		//do a draw to trigger fb flip
 		esp_lcd_panel_draw_bitmap(panel_handle, 0, 0, 1, 1, lcdbuf[cur_buf]);
 		cur_buf=cur_buf?0:1;
 		int64_t end_us = esp_timer_get_time();
 #if 0
+		//Shows the maximum FPS possible given the lcd frame drawing code
 		printf("LCD Fps: %02f\n", 1000000.0/(end_us-start_us));
 #endif
 	}
@@ -200,6 +222,9 @@ void QG_SetPalette(unsigned char palette[768]) {
 		int g=(*p++)>>2;
 		int r=(*p++)>>3;
 		pal[i]=r+(g<<5)+(b<<11);
+#if QUAKEGENERIC_RES_SCALE==2
+		pal[i]=pal[i]|(pal[i]<<16);
+#endif
 	}
 }
 
@@ -241,6 +266,13 @@ void app_main() {
 	bsp_display_brightness_set(100);
 
 	ESP_ERROR_CHECK(esp_lcd_dpi_panel_get_frame_buffer(panel_handle, 2, (void**)&lcdbuf[0], (void**)&lcdbuf[1]));
+
+    // Initialize TCP/IP network interface aka the esp-netif (should be called only once in application)
+//    ESP_ERROR_CHECK(esp_netif_init());
+    // Create default event loop that running in background
+//    ESP_ERROR_CHECK(esp_event_loop_create_default());
+
+	ethernet_connect();
 
 	drawing_mux=xSemaphoreCreateMutex();
 	int stack_depth=200*1024;

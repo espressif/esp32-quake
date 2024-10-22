@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // cl_main.c  -- client main loop
 
 #include "quakedef.h"
+#include "esp_attr.h"
 
 // we need to declare some mouse variables here, because the menu system
 // references them even when on a unix system.
@@ -44,6 +45,7 @@ cvar_t	m_side = {"m_side","0.8", true};
 client_static_t	cls;
 client_state_t	cl;
 // FIXME: put these on hunk?
+//note: not on extram as these are used a lot (0.5fps increase)
 efrag_t			cl_efrags[MAX_EFRAGS];
 entity_t		cl_entities[MAX_EDICTS];
 entity_t		cl_static_entities[MAX_STATIC_ENTITIES];
