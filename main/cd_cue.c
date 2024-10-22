@@ -154,6 +154,7 @@ int CDAudio_Init(void)
 #define STATE_STOPPED 0
 #define STATE_PLAYING 1
 #define STATE_PLAYNEW 2
+#define STATE_SHUTDOWN 3
 
 static int state;
 static int cd_track;
@@ -176,7 +177,7 @@ void CDAudio_get_samps(char *samps, int len_bytes) {
 void cd_task(void *param) {
 	int size=RINGBUF_SZ/4; //we read in chunks this big
 	char *item=malloc(size);
-	while(1) {
+	while(state!=STATE_SHUTDOWN) {
 		xSemaphoreTake(player_ctl_mux, portMAX_DELAY);
 		if (state==STATE_STOPPED) { //or paused
 			//output silence
@@ -205,11 +206,14 @@ void cd_task(void *param) {
 		xSemaphoreGive(player_ctl_mux);
 		xRingbufferSend(ringbuf, item, size, portMAX_DELAY);
 	}
+	fclose(cdfile);
+	free(item);
+	vTaskDelete(NULL);
 }
 
 void CDAudio_Shutdown(void)
 {
-	fclose(cdfile);
+	state=STATE_SHUTDOWN;
 }
 
 
