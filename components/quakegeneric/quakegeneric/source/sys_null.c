@@ -164,7 +164,8 @@ void Sys_Error (char *error, ...)
 	va_end (argptr);
 	printf ("\n");
 
-	exit (1);
+	Host_Shutdown();
+	QG_Quit();
 }
 
 void Sys_Printf (char *fmt, ...)
@@ -176,9 +177,11 @@ void Sys_Printf (char *fmt, ...)
 	va_end (argptr);
 }
 
+
 void Sys_Quit (void)
 {
-	exit (0);
+	Host_Shutdown();
+	QG_Quit();
 }
 
 double Sys_FloatTime (void)

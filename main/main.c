@@ -17,9 +17,15 @@
 #include "usb_hid_keys.h"
 #include "quakekeys.h"
 #include "eth_connect.h"
+#include "font_8x16.h"
+
+#include "quakedef.h"
 
 esp_lcd_panel_handle_t panel_handle = NULL;
 esp_lcd_panel_io_handle_t io_handle = NULL;
+
+#define LCD_W 1024
+#define LCD_H 600
 
 void QG_Init(void) {
 }
@@ -147,8 +153,6 @@ void QG_GetMouseMove(int *x, int *y) {
 	mouse_dy=0;
 }
 
-void QG_Quit(void) {
-}
 
 #if QUAKEGENERIC_RES_SCALE==2
 uint32_t pal[768];
@@ -158,6 +162,7 @@ uint16_t pal[768];
 uint8_t *cur_pixels;
 uint16_t *lcdbuf[2]={};
 int cur_buf=1;
+int draw_task_quit=0;
 
 static TaskHandle_t draw_task_handle;
 static SemaphoreHandle_t drawing_mux;
@@ -171,7 +176,7 @@ void QG_DrawFrame(void *pixels) {
 }
 
 void draw_task(void *param) {
-	while(1) {
+	while(!draw_task_quit) {
 		ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 		
 		xSemaphoreTake(drawing_mux, portMAX_DELAY);
@@ -184,7 +189,7 @@ void draw_task(void *param) {
 		//If we scale by 2, we can optimize by writing 32 bits at a time.
 		for (int y=0; y<QUAKEGENERIC_RES_Y*QUAKEGENERIC_RES_SCALE; y++) {
 			uint8_t *srcline=&p[(y/QUAKEGENERIC_RES_SCALE)*QUAKEGENERIC_RES_X];
-			uint32_t *dst=(uint32_t*)&lcdp[1024*y];
+			uint32_t *dst=(uint32_t*)&lcdp[LCD_W*y];
 			for (int x=0; x<QUAKEGENERIC_RES_X; x++) {
 				*dst++=pal[*srcline++];
 			}
@@ -193,7 +198,7 @@ void draw_task(void *param) {
 		//generic random scaling
 		for (int y=0; y<QUAKEGENERIC_RES_Y*QUAKEGENERIC_RES_SCALE; y++) {
 			uint8_t *srcline=&p[(y/QUAKEGENERIC_RES_SCALE)*QUAKEGENERIC_RES_X];
-			uint16_t *dst=&lcdp[1024*y];
+			uint16_t *dst=&lcdp[LCD_W*y];
 			for (int x=0; x<QUAKEGENERIC_RES_X; x++) {
 				for (int rep=0; rep<QUAKEGENERIC_RES_SCALE; rep++) {
 					*dst++=pal[*srcline];
@@ -204,7 +209,7 @@ void draw_task(void *param) {
 #endif
 		xSemaphoreGive(drawing_mux);
 		//do a draw to trigger fb flip
-		esp_lcd_panel_draw_bitmap(panel_handle, 0, 0, 1, 1, lcdbuf[cur_buf]);
+		esp_lcd_panel_draw_bitmap(panel_handle, 0, 0, LCD_W, LCD_H, lcdbuf[cur_buf]);
 		cur_buf=cur_buf?0:1;
 		int64_t end_us = esp_timer_get_time();
 #if 0
@@ -226,6 +231,71 @@ void QG_SetPalette(unsigned char palette[768]) {
 		pal[i]=pal[i]|(pal[i]<<16);
 #endif
 	}
+}
+
+
+void draw_char(int x, int y, int ch, int fore, int back) {
+	uint16_t *fb=lcdbuf[cur_buf];
+	for (int py=0; py<16; py++) {
+		for (int px=0; px<8; px++) {
+			int pix=fontdata_8x16[ch*16+py]&(1<<px);
+			int col=pix?fore:back;
+			fb[LCD_W*(y+py)+(x+(7-px))]=pal[col];
+		}
+	}
+}
+
+
+void draw_end_screen(char *vgamem) {
+	memset(lcdbuf[cur_buf], 0, LCD_W*LCD_H*sizeof(uint16_t));
+
+	const unsigned char pal[768]={ //EGA pallette; b, g, r
+		0x00, 0x00, 0x00,
+		0x00, 0x00, 0xaa,
+		0x00, 0xaa, 0x00,
+		0x00, 0xaa, 0xaa,
+		0xaa, 0x00, 0x00,
+		0xaa, 0x00, 0xaa,
+		0xaa, 0x55, 0x00,
+		0xaa, 0xaa, 0xaa,
+		0x55, 0x55, 0x55,
+		0x55, 0x55, 0xff,
+		0x55, 0xff, 0x55,
+		0x55, 0xff, 0xff,
+		0xff, 0x55, 0x55,
+		0xff, 0x55, 0xff,
+		0xff, 0xff, 0x55,
+		0xff, 0xff, 0xff
+	};
+	QG_SetPalette(pal);
+
+	int off_x=(LCD_W-(80*8))/2;
+	int off_y=(LCD_H-(25*16))/2;
+
+	if (vgamem) {
+		for (int y=0; y<25; y++) {
+			for (int x=0; x<80; x++) {
+				draw_char(x*8+off_x, y*16+off_y, vgamem[0], vgamem[1]&0xf, (vgamem[1]>>4)&0x7);
+				vgamem+=2;
+			}
+		}
+	}
+	esp_lcd_panel_draw_bitmap(panel_handle, 0, 0, LCD_W, LCD_H, lcdbuf[cur_buf]);
+}
+
+void QG_Quit(void) {
+	draw_task_quit=1;
+	xSemaphoreGive(drawing_mux);
+	vTaskDelay(pdMS_TO_TICKS(30)+1);
+	//we can now use the framebuffer to draw the end screen
+	unsigned char *d;
+	if (registered.value)
+		d = COM_LoadHunkFile ("end2.bin"); 
+	else
+		d = COM_LoadHunkFile ("end1.bin"); 
+	draw_end_screen(d);
+
+	while(1) vTaskDelay(100);
 }
 
 

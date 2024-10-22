@@ -72,7 +72,10 @@ void	VID_Init (unsigned char *palette)
 
 void	VID_Shutdown (void)
 {
-		free(surfcache);
+	free(zbuffer);
+	free(vid_buffer[0]);
+	free(vid_buffer[1]);
+	free(surfcache);
 }
 
 void	VID_Update (vrect_t *rects)
