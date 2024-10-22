@@ -48,14 +48,24 @@ void audio_task(void *param) {
 	printf("audio task running\n");
 	//simulate DMA to audio; just write the DMA buffer in a circular fashion.
 	int16_t mix_buf[CHUNKSZ/2];
+	int old_volume=-1;
 	while(1) {
+		int mainvolume = (int)(volume.value * 100.0);
+		if (mainvolume!=old_volume) {
+			esp_codec_dev_set_out_vol(spk_codec_dev, mainvolume);
+			old_volume=mainvolume;
+			printf("Set volume %f\n", mainvolume);
+		}
+		int cdvol = (int)(bgmvolume.value * 255.0);
+
 		CDAudio_get_samps((char*)mix_buf, CHUNKSZ);
 		int16_t *digaudio=(int16_t*)&dma_buffer[dma_rpos];
 		//Mix CD audio and digi samples
 		for (int i=0; i<CHUNKSZ/2; i++) {
-			int a=mix_buf[i];
+			int a=(((int)mix_buf[i])*cdvol)/256;
+//			int a=mix_buf[i];
 			int b=digaudio[i];
-			int mixed=(a*16)+(b*16); //set mix ratio between cd music and game audio here
+			int mixed=(a*24)+(b*8); //set mix ratio between cd music and game audio here
 			mix_buf[i]=mixed/32;
 		}
 		dma_rpos=(dma_rpos + CHUNKSZ) % BUFFER_SIZE;
