@@ -2,6 +2,9 @@
 #include "esp_attr.h"
 #include "freertos/ringbuf.h"
 #include "freertos/semphr.h"
+#include <fnmatch.h>
+#include <sys/types.h>
+#include <dirent.h>
 
 /*
 Note: The GOG release of the game includes the CDs as cue/gog (actually cue/bin) files
@@ -24,8 +27,6 @@ typedef struct {
 #define MAX_TRK 32
 track_t tracks[MAX_TRK]={0};
 FILE *cdfile;
-
-#define CUE "game.cue"
 
 SemaphoreHandle_t player_ctl_mux;
 
@@ -50,6 +51,41 @@ static long time2frames(char *s)
 	return 75 * (mins * 60 + secs) + frames;
 }
 
+
+static const char *cue_candidates[]={
+	"game.cue",
+	"quake1.cue",
+	"quake.cue",
+	"*.cue",
+	NULL
+};
+
+
+static FILE* open_cuefile(const char *basedir) {
+	int n=0;
+	while(cue_candidates[n]) {
+		DIR *dir=opendir(basedir);
+		if (!dir) return NULL;
+		struct dirent *de;
+		while((de=readdir(dir))!=NULL) {
+			if (fnmatch(cue_candidates[n], de->d_name, 0)==0) {
+				char fn[MAX_OSPATH];
+				sprintf(fn, "%s/%s", basedir, de->d_name);
+				FILE *f=fopen(fn, "r");
+				if (de) {
+					printf("CDAudio: Using cue file %s\n", fn);
+					closedir(dir);
+					return f;
+				}
+			}
+		}
+		closedir(dir);
+		n++;
+	}
+	printf("CDAudio: could not find cue file; not using cd audio.\n");
+	return NULL; //nothing found
+}
+
 void cd_task(void *param);
 RingbufHandle_t ringbuf;
 #define RINGBUF_SZ (CD_FRAME_SIZE*32)
@@ -72,14 +108,12 @@ int CDAudio_Init(void)
 		}
 	}
 
-	//Assemble path to cue file and open
-	char fn[MAX_OSPATH];
-	sprintf(fn, "%s/%s", basedir, CUE);
-	FILE *f=fopen(fn, "r");
+	FILE *f=open_cuefile(basedir);
 	if (!f) {
-		printf("CDAudio_Init: couldn't find cue file %s\n", CUE);
+		printf("CDAudio_Init: couldn't find cue file\n");
 		return 0;
 	}
+	if (!f) return 0;
 	char buf[1024];
 	char binfile[MAX_OSPATH]={0};
 	int cur_trk=0;
