@@ -163,7 +163,11 @@ static int cd_looping;
 //Read samples from the current CD track into a buffer.
 void CDAudio_get_samps(char *samps, int len_bytes) {
 	size_t recv_size=0;
-	if (!ringbuf) return; //not initialized yet, so do nothing
+	if (!ringbuf) {
+		//not initialized (yet?) so output silence
+		memset(samps, 0, len_bytes);
+		return; 
+	}
 	while (len_bytes) {
 		char *item=xRingbufferReceiveUpTo(ringbuf, &recv_size, portMAX_DELAY, len_bytes);
 		assert(recv_size<=len_bytes);
@@ -218,6 +222,7 @@ void CDAudio_Shutdown(void)
 
 
 void CDAudio_Play(byte track, qboolean looping) {
+	if (!cdfile) return;
 	xSemaphoreTake(player_ctl_mux, portMAX_DELAY);
 	state=STATE_PLAYNEW;
 	cd_track=track;
@@ -228,6 +233,7 @@ void CDAudio_Play(byte track, qboolean looping) {
 
 
 void CDAudio_Stop(void) {
+	if (!cdfile) return;
 	xSemaphoreTake(player_ctl_mux, portMAX_DELAY);
 	state=STATE_STOPPED;
 	printf("CD: Stopping\n");
@@ -236,6 +242,7 @@ void CDAudio_Stop(void) {
 
 
 void CDAudio_Pause(void) {
+	if (!cdfile) return;
 	xSemaphoreTake(player_ctl_mux, portMAX_DELAY);
 	state=STATE_STOPPED;
 	printf("CD: Pausing\n");
@@ -244,6 +251,7 @@ void CDAudio_Pause(void) {
 
 
 void CDAudio_Resume(void) {
+	if (!cdfile) return;
 	xSemaphoreTake(player_ctl_mux, portMAX_DELAY);
 	state=STATE_PLAYING;
 	printf("CD: Resuming\n");
