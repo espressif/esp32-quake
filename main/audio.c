@@ -28,7 +28,7 @@ void CDAudio_get_samps(char *samps, int len_bytes);
 void audio_task(void *param) {
 	printf("audio task running\n");
 	//simulate DMA to audio; just write the DMA buffer in a circular fashion.
-	int16_t mix_buf[CHUNKSZ/2];
+	int16_t *mix_buf=calloc(CHUNKSZ/2, sizeof(int16_t));
 	int old_volume=-1;
 	while(1) {
 		int mainvolume = (int)(volume.value * 100.0);
@@ -52,6 +52,7 @@ void audio_task(void *param) {
 		dma_rpos=(dma_rpos + CHUNKSZ) % BUFFER_SIZE;
 		esp_codec_dev_write(spk_codec_dev, mix_buf, CHUNKSZ);
 	}
+	free(mix_buf);
 }
 
 qboolean SNDDMA_Init(void)
