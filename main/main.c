@@ -27,17 +27,17 @@ esp_lcd_panel_io_handle_t io_handle = NULL;
 void QG_Init(void) {
 }
 
-uint16_t pal[768];
-uint8_t *cur_pixels;
-uint16_t *lcdbuf[2]={};
-int cur_buf=1;
-int draw_task_quit=0;
+static uint16_t pal[768];
+static uint8_t *cur_pixels;
+static uint16_t *lcdbuf[2]={};
+static int cur_buf=1;
+static int draw_task_quit=0;
 
 static TaskHandle_t draw_task_handle;
 static SemaphoreHandle_t drawing_mux;
 
-int fps_ticks=0;
-int64_t start_time_fps_meas;
+static int fps_ticks=0;
+static int64_t start_time_fps_meas;
 
 void QG_DrawFrame(void *pixels) {
 	xSemaphoreTake(drawing_mux, portMAX_DELAY);
@@ -54,7 +54,7 @@ void QG_DrawFrame(void *pixels) {
 	}
 }
 
-void draw_task(void *param) {
+static void draw_task(void *param) {
 	ppa_client_config_t ppa_cfg={
 		.oper_type=PPA_OPERATION_SRM,
 	};
@@ -128,7 +128,12 @@ void QG_SetPalette(unsigned char palette[768]) {
 #define CHAR_W 8
 #define CHAR_H 16
 
-void draw_char(int x, int y, int ch, int fore, int back) {
+static void draw_char(int x, int y, int ch, int fore, int back) {
+	//make sure not to draw out of bounds
+	if (x<0 || y<0) return;
+	if (x+CHAR_W >= BSP_LCD_H_RES) return;
+	if (y+CHAR_H >= BSP_LCD_V_RES) return;
+	//write character
 	uint16_t *fb=lcdbuf[cur_buf];
 	for (int py=0; py<CHAR_H; py++) {
 		for (int px=0; px<CHAR_W; px++) {
@@ -139,8 +144,7 @@ void draw_char(int x, int y, int ch, int fore, int back) {
 	}
 }
 
-
-void draw_end_screen(char *vgamem) {
+static void draw_end_screen(char *vgamem) {
 	memset(lcdbuf[cur_buf], 0, BSP_LCD_H_RES*BSP_LCD_V_RES*sizeof(uint16_t));
 
 	const unsigned char pal[768]={ //EGA pallette; b, g, r
@@ -193,7 +197,7 @@ void QG_Quit(void) {
 }
 
 
-void quake_task(void *param) {
+static void quake_task(void *param) {
 	char *argv[]={
 		"quake", 
 		"-basedir", "/sdcard/",
@@ -219,7 +223,6 @@ void app_main() {
 	esp_lcd_panel_disp_on_off(panel_handle, true);
 	bsp_display_brightness_init();
 	bsp_display_brightness_set(100);
-
 
 	ethernet_connect();
 
