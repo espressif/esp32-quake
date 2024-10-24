@@ -14,7 +14,7 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "usb_hid.h"
-#include "usb_hid_keys.h"
+#include "hid_keys.h"
 #include "quakekeys.h"
 #include "eth_connect.h"
 #include "font_8x16.h"

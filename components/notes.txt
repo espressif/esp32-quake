@@ -1,2 +1,0 @@
-The P4 evaluation board BSP is included here as it needed a small hack to
-allow for two MIPI-DSI framebuffers.
