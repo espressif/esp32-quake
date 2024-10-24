@@ -17,23 +17,17 @@
 #include "eth_connect.h"
 #include "font_8x16.h"
 #include "input.h"
+#include "driver/ppa.h"
 
 #include "quakedef.h"
 
 esp_lcd_panel_handle_t panel_handle = NULL;
 esp_lcd_panel_io_handle_t io_handle = NULL;
 
-#define LCD_W 1024
-#define LCD_H 600
-
 void QG_Init(void) {
 }
 
-#if QUAKEGENERIC_RES_SCALE==2
-uint32_t pal[768];
-#else
 uint16_t pal[768];
-#endif
 uint8_t *cur_pixels;
 uint16_t *lcdbuf[2]={};
 int cur_buf=1;
@@ -61,6 +55,16 @@ void QG_DrawFrame(void *pixels) {
 }
 
 void draw_task(void *param) {
+	ppa_client_config_t ppa_cfg={
+		.oper_type=PPA_OPERATION_SRM,
+	};
+	ppa_client_handle_t ppa;
+	ESP_ERROR_CHECK(ppa_register_client(&ppa_cfg, &ppa));
+
+	uint16_t *rgbfb=heap_caps_calloc(QUAKEGENERIC_RES_X*QUAKEGENERIC_RES_Y, sizeof(uint16_t), MALLOC_CAP_DMA|MALLOC_CAP_SPIRAM);
+	assert(rgbfb);
+	ESP_ERROR_CHECK(esp_lcd_dpi_panel_get_frame_buffer(panel_handle, 2, (void**)&lcdbuf[0], (void**)&lcdbuf[1]));
+
 	while(!draw_task_quit) {
 		ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 		
@@ -68,33 +72,39 @@ void draw_task(void *param) {
 		int64_t start_us = esp_timer_get_time();
 		// convert pixels
 		uint8_t *p=(uint8_t*)cur_pixels;
-		uint16_t *lcdp=lcdbuf[cur_buf];
+		uint16_t *lcdp=rgbfb;
+		for (int y=0; y<QUAKEGENERIC_RES_Y; y++) {
+			for (int x=0; x<QUAKEGENERIC_RES_X; x++) {
+				*lcdp++=pal[*p++];
+			}
+		}
 
-#if QUAKEGENERIC_RES_SCALE==2
-		//If we scale by 2, we can optimize by writing 32 bits at a time.
-		for (int y=0; y<QUAKEGENERIC_RES_Y*QUAKEGENERIC_RES_SCALE; y++) {
-			uint8_t *srcline=&p[(y/QUAKEGENERIC_RES_SCALE)*QUAKEGENERIC_RES_X];
-			uint32_t *dst=(uint32_t*)&lcdp[LCD_W*y];
-			for (int x=0; x<QUAKEGENERIC_RES_X; x++) {
-				*dst++=pal[*srcline++];
-			}
-		}
-#else
-		//generic random scaling
-		for (int y=0; y<QUAKEGENERIC_RES_Y*QUAKEGENERIC_RES_SCALE; y++) {
-			uint8_t *srcline=&p[(y/QUAKEGENERIC_RES_SCALE)*QUAKEGENERIC_RES_X];
-			uint16_t *dst=&lcdp[LCD_W*y];
-			for (int x=0; x<QUAKEGENERIC_RES_X; x++) {
-				for (int rep=0; rep<QUAKEGENERIC_RES_SCALE; rep++) {
-					*dst++=pal[*srcline];
-				}
-				srcline++;
-			}
-		}
-#endif
+		//use ppa to scale image
+		ppa_srm_oper_config_t op={
+			.in={
+				.buffer=rgbfb,
+				.pic_w=QUAKEGENERIC_RES_X,
+				.pic_h=QUAKEGENERIC_RES_Y,
+				.block_w=QUAKEGENERIC_RES_X,
+				.block_h=QUAKEGENERIC_RES_Y,
+				.srm_cm=PPA_SRM_COLOR_MODE_RGB565,
+			},
+			.out={
+				.buffer=lcdbuf[cur_buf],
+				.buffer_size=BSP_LCD_V_RES*BSP_LCD_H_RES*sizeof(int16_t),
+				.pic_w=BSP_LCD_H_RES,
+				.pic_h=BSP_LCD_V_RES,
+				.srm_cm=PPA_SRM_COLOR_MODE_RGB565,
+			},
+			.scale_x=(float)BSP_LCD_H_RES/(float)QUAKEGENERIC_RES_X,
+			.scale_y=(float)BSP_LCD_V_RES/(float)QUAKEGENERIC_RES_Y,
+			.mode=PPA_TRANS_MODE_BLOCKING,
+		};
+		ESP_ERROR_CHECK(ppa_do_scale_rotate_mirror(ppa, &op));
+
 		xSemaphoreGive(drawing_mux);
 		//do a draw to trigger fb flip
-		esp_lcd_panel_draw_bitmap(panel_handle, 0, 0, LCD_W, LCD_H, lcdbuf[cur_buf]);
+		esp_lcd_panel_draw_bitmap(panel_handle, 0, 0, BSP_LCD_H_RES, BSP_LCD_V_RES, lcdbuf[cur_buf]);
 		cur_buf=cur_buf?0:1;
 		int64_t end_us = esp_timer_get_time();
 #if 0
@@ -112,27 +122,26 @@ void QG_SetPalette(unsigned char palette[768]) {
 		int g=(*p++)>>2;
 		int r=(*p++)>>3;
 		pal[i]=r+(g<<5)+(b<<11);
-#if QUAKEGENERIC_RES_SCALE==2
-		pal[i]=pal[i]|(pal[i]<<16);
-#endif
 	}
 }
 
+#define CHAR_W 8
+#define CHAR_H 16
 
 void draw_char(int x, int y, int ch, int fore, int back) {
 	uint16_t *fb=lcdbuf[cur_buf];
-	for (int py=0; py<16; py++) {
-		for (int px=0; px<8; px++) {
-			int pix=fontdata_8x16[ch*16+py]&(1<<px);
+	for (int py=0; py<CHAR_H; py++) {
+		for (int px=0; px<CHAR_W; px++) {
+			int pix=fontdata_8x16[ch*CHAR_H+py]&(1<<px);
 			int col=pix?fore:back;
-			fb[LCD_W*(y+py)+(x+(7-px))]=pal[col];
+			fb[BSP_LCD_H_RES*(y+py)+(x+(7-px))]=pal[col];
 		}
 	}
 }
 
 
 void draw_end_screen(char *vgamem) {
-	memset(lcdbuf[cur_buf], 0, LCD_W*LCD_H*sizeof(uint16_t));
+	memset(lcdbuf[cur_buf], 0, BSP_LCD_H_RES*BSP_LCD_V_RES*sizeof(uint16_t));
 
 	const unsigned char pal[768]={ //EGA pallette; b, g, r
 		0x00, 0x00, 0x00,
@@ -154,18 +163,18 @@ void draw_end_screen(char *vgamem) {
 	};
 	QG_SetPalette(pal);
 
-	int off_x=(LCD_W-(80*8))/2;
-	int off_y=(LCD_H-(25*16))/2;
+	int off_x=(BSP_LCD_H_RES-(80*8))/2;
+	int off_y=(BSP_LCD_V_RES-(25*16))/2;
 
 	if (vgamem) {
 		for (int y=0; y<25; y++) {
 			for (int x=0; x<80; x++) {
-				draw_char(x*8+off_x, y*16+off_y, vgamem[0], vgamem[1]&0xf, (vgamem[1]>>4)&0x7);
+				draw_char(x*CHAR_W+off_x, y*CHAR_H+off_y, vgamem[0], vgamem[1]&0xf, (vgamem[1]>>4)&0x7);
 				vgamem+=2;
 			}
 		}
 	}
-	esp_lcd_panel_draw_bitmap(panel_handle, 0, 0, LCD_W, LCD_H, lcdbuf[cur_buf]);
+	esp_lcd_panel_draw_bitmap(panel_handle, 0, 0, BSP_LCD_H_RES, BSP_LCD_V_RES, lcdbuf[cur_buf]);
 }
 
 void QG_Quit(void) {
@@ -211,7 +220,6 @@ void app_main() {
 	bsp_display_brightness_init();
 	bsp_display_brightness_set(100);
 
-	ESP_ERROR_CHECK(esp_lcd_dpi_panel_get_frame_buffer(panel_handle, 2, (void**)&lcdbuf[0], (void**)&lcdbuf[1]));
 
 	ethernet_connect();
 
