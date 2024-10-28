@@ -82,8 +82,8 @@ folder should be located in the root, not in a subfolder.
 
 If you want music (and the version of Quake you're using supports it - the shareware version
 and LibreQuake does not) you'll need to place a .bin/.cue image of the CDROM in the root
-of the Micro-SD card as well. If you're using the GOG.com version, no need to do anything
-- it already comes with the required image.
+of the Micro-SD card as well. If you're using the GOG.com version, no need to do anything - it 
+already comes with the required image.
 
 Compiling, flashing and running
 ===============================
