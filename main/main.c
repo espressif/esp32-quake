@@ -27,7 +27,7 @@ esp_lcd_panel_io_handle_t io_handle = NULL;
 void QG_Init(void) {
 }
 
-static uint16_t pal[768];
+static uint16_t pal[256];
 static uint8_t *cur_pixels;
 static uint16_t *lcdbuf[2]={};
 static int cur_buf=1;
