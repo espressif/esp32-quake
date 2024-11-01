@@ -115,5 +115,13 @@ the game is running on. It should be fairly easy to port to any other board that
 implementation. However, no such attempt has been made and as such, there may be issues lurking
 in dark corners.
 
+Credits
+=======
+
+This is based on [quake-generic](https://github.com/erysdren/quakegeneric) by erysdren, which 
+in turn is based on the [Quake sources](https://github.com/id-Software/Quake) released by 
+Id Software.
+
+
 
 
