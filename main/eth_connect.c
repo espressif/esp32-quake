@@ -52,12 +52,11 @@ static esp_eth_handle_t eth_init_internal(esp_eth_mac_t **mac_out, esp_eth_phy_t
     // Create new ESP32 Ethernet MAC instance
     esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&esp32_emac_config, &mac_config);
     // Create new PHY instance based on board configuration
-    esp_eth_phy_t *phy = esp_eth_phy_new_generic(&phy_config);
-//    esp_eth_phy_t *phy = esp_eth_phy_new_ip101(&phy_config);
-//    esp_eth_phy_t *phy = esp_eth_phy_new_rtl8201(&phy_config);
-//    esp_eth_phy_t *phy = esp_eth_phy_new_lan87xx(&phy_config);
-//    esp_eth_phy_t *phy = esp_eth_phy_new_dp83848(&phy_config);
-//    esp_eth_phy_t *phy = esp_eth_phy_new_ksz80xx(&phy_config);
+    // The ESP32-P4-function-ev-board has an IP101, but generic also works if your
+    // esp-idf version supports it.
+    esp_eth_phy_t *phy = esp_eth_phy_new_ip101(&phy_config);
+//  esp_eth_phy_t *phy = esp_eth_phy_new_generic(&phy_config);
+
     // Init Ethernet driver to default and install it
     esp_eth_handle_t eth_handle = NULL;
     esp_eth_config_t config = ETH_DEFAULT_CONFIG(mac, phy);
