@@ -88,7 +88,9 @@ already comes with the required image.
 Compiling, flashing and running
 ===============================
 
-This project needs ESP-IDF v5.3 or later to properly compile. With it installed, run:
+This project needs ESP-IDF v5.4 or later, or until v5.4 is released the master branch of ESP-IDF,
+to properly compile. (It will compile properly with v5.3, but USB host won't work making the
+game uncontrollable.) With a proper ESP-IDF installed, run:
 
 - ``idf.py set-target esp32p4`` (only the first time)
 
