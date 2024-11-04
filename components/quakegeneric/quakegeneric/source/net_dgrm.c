@@ -22,7 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define DEBUG 1
 
 // This is enables a simple IP banning mechanism
-#define BAN_TEST
+//#define BAN_TEST
 
 #ifdef BAN_TEST
 #include <sys/socket.h>
@@ -32,6 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 #include "net_dgrm.h"
+#include "esp_attr.h"
 
 // these two macros are to make the code more readable
 #define sfunc	net_landrivers[sock->landriver]
@@ -49,7 +50,7 @@ int droppedDatagrams;
 
 static int myDriverLevel;
 
-struct
+EXT_RAM_BSS_ATTR struct
 {
 	unsigned int	length;
 	unsigned int	sequence;

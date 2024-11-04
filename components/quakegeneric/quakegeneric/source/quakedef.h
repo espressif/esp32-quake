@@ -66,9 +66,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #define	ON_EPSILON		0.1			// point on plane side epsilon
 
+#if 0
+//Original defs
 #define	MAX_MSGLEN		8000		// max length of a reliable message
 #define	MAX_DATAGRAM	1024		// max length of unreliable message
-
+#else
+//Compatibility with fitzquake and others
+#define	MAX_MSGLEN		64000		// max length of a reliable message
+#define	MAX_DATAGRAM	64000		// max length of unreliable message
+#endif
 //
 // per-level limits
 //

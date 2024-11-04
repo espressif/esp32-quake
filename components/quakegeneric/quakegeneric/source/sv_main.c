@@ -20,8 +20,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // sv_main.c -- server main program
 
 #include "quakedef.h"
+#include "esp_attr.h"
 
-server_t		sv;
+EXT_RAM_BSS_ATTR server_t		sv;
 server_static_t	svs;
 
 char	localmodels[MAX_MODELS][5];			// inline model names for precache

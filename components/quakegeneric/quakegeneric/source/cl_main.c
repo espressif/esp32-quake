@@ -47,10 +47,12 @@ client_state_t	cl;
 // FIXME: put these on hunk?
 //note: not on extram as these are used a lot (0.5fps increase)
 efrag_t			cl_efrags[MAX_EFRAGS];
-entity_t		cl_entities[MAX_EDICTS];
 entity_t		cl_static_entities[MAX_STATIC_ENTITIES];
 lightstyle_t	cl_lightstyle[MAX_LIGHTSTYLES];
 dlight_t		cl_dlights[MAX_DLIGHTS];
+
+//this one is 110K though
+EXT_RAM_BSS_ATTR entity_t		cl_entities[MAX_EDICTS];
 
 int				cl_numvisedicts;
 entity_t		*cl_visedicts[MAX_VISEDICTS];

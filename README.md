@@ -104,10 +104,22 @@ Network play
 ============
 
 Network play is possible by connecting the RJ-45 Ethernet port of the devkit to a network.
-On startup, the ESP32P4 will request an IP via DHCP. Note that because of a bug in the
-network layer, it's not currently possible to connect to an external server, but Quake 
-on the ESP32-P4 is able to act like a server itself.
+On startup, the ESP32P4 will request an IP via DHCP.
 
+When connecting to a server, you should enter its IP directly in the 'Join game at' field,
+rather than using 'Search for local games'. The latter will find running games, but will
+fail to actually connect.
+
+This version of Quake only speaks the original version of the Quake network protocol. If
+you get the error ``Server returned version xxx, not 15`` when trying to connect to a server,
+try to switch the server back to the old protocol. To do that, use the command 
+``sv_protocol 15`` on the console (``~``-key) on the server before starting a multiplayer 
+game.
+
+Note that this version of Quake is also capable of acting as a server itself. Modern versions
+of Quake should be able to connect to it. Simply select the ``New game`` option under the
+``multiplayer`` menu. Note that clients also should connect to the game using the 
+``Join game at`` method.
 
 Porting
 =======

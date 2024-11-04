@@ -211,9 +211,9 @@ static int PartialIPAddress (char *in, struct qsockaddr *hostaddr)
 	else
 		port = net_hostport;
 
-	printf("PartialIpAddr %s  ", in);
-	for (int i=0; i<4; i++) printf("%d.", (addr>>((3-i)*8))&0xff);
-	printf("\n");
+//	printf("PartialIpAddr %s  ", in);
+//	for (int i=0; i<4; i++) printf("%d.", (addr>>((3-i)*8))&0xff);
+//	printf("\n");
 
 	hostaddr->sa_family = AF_INET;
 	((struct sockaddr_in *)hostaddr)->sin_port = htons((short)port);	
@@ -255,6 +255,8 @@ int UDP_Read (int socket, byte *buf, int len, struct qsockaddr *addr)
 	ret = recvfrom (socket, buf, len, 0, (struct sockaddr *)addr, &addrlen);
 	if (ret == -1 && (errno == EWOULDBLOCK || errno == ECONNREFUSED))
 		return 0;
+
+//	printf("UDP_Read: %d bytes (buf %d)\n", ret, len);
 	return ret;
 }
 
@@ -300,7 +302,7 @@ int UDP_Write (int socket, byte *buf, int len, struct qsockaddr *addr)
 	int ret;
 	char nbuf[256];
 	inet_ntop(AF_INET, &((struct sockaddr_in *)addr)->sin_addr.s_addr, nbuf, 256);
-	printf("UdpWrite %s:%d\n", nbuf, ntohs(((struct sockaddr_in *)addr)->sin_port));
+//	printf("UdpWrite %s:%d\n", nbuf, ntohs(((struct sockaddr_in *)addr)->sin_port));
 	ret = sendto (socket, buf, len, 0, (struct sockaddr *)addr, sizeof(struct qsockaddr));
 	if (ret == -1 && errno == EWOULDBLOCK) {
 		return 0;
@@ -371,12 +373,16 @@ int UDP_GetAddrFromName(char *name, struct qsockaddr *addr)
 {
 	struct hostent *hostentry;
 
-//	if (name[0] >= '0' && name[0] <= '9')
-//		return PartialIPAddress (name, addr);
+	if (name[0] >= '0' && name[0] <= '9')
+		return PartialIPAddress (name, addr);
+
+	//note: this can be fed host:port, is that ok? But also note this is what the original code did.
 	
 	hostentry = gethostbyname (name);
-	if (!hostentry)
+	if (!hostentry) {
+		printf("UDP_GetAddrFromName %s fail\n", name);
 		return -1;
+	}
 
 	addr->sa_family = AF_INET;
 	((struct sockaddr_in *)addr)->sin_port = htons(net_hostport);	
