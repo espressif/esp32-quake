@@ -68,7 +68,7 @@ void app_main() {
 
 	int stack_depth=200*1024;
 
-	StaticTask_t *taskbuf=calloc(sizeof(StaticTask_t), 1);
+	StaticTask_t *taskbuf=calloc(1, sizeof(StaticTask_t));
 	uint8_t *stackbuf=calloc(stack_depth, 1);
 	xTaskCreateStaticPinnedToCore(quake_task, "quake", stack_depth, NULL, 2, (StackType_t*)stackbuf, taskbuf, 0);
 }
