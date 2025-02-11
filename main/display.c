@@ -207,7 +207,15 @@ void display_quit() {
 
 void display_init() {
 	//initialize LCD
-	bsp_display_new(NULL, &panel_handle, &io_handle);
+	const bsp_display_config_t config = {
+		.hdmi_resolution = BSP_HDMI_RES_NONE,
+		.dsi_bus = {
+			.phy_clk_src = MIPI_DSI_PHY_CLK_SRC_DEFAULT,
+			.lane_bit_rate_mbps = BSP_LCD_MIPI_DSI_LANE_BITRATE_MBPS,
+		},
+	};
+
+	bsp_display_new(&config, &panel_handle, &io_handle);
 	esp_lcd_panel_disp_on_off(panel_handle, true);
 	bsp_display_brightness_init();
 	bsp_display_brightness_set(100);
