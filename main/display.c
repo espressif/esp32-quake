@@ -208,7 +208,19 @@ void display_quit() {
 void display_init() {
 	//initialize LCD
 	const bsp_display_config_t config = {
-		.hdmi_resolution = BSP_HDMI_RES_NONE,
+#if CONFIG_BSP_LCD_TYPE_HDMI
+#if CONFIG_BSP_LCD_HDMI_800x600_60HZ
+            .hdmi_resolution = BSP_HDMI_RES_800x600,
+#elif CONFIG_BSP_LCD_HDMI_1280x720_60HZ
+            .hdmi_resolution = BSP_HDMI_RES_1280x720,
+#elif CONFIG_BSP_LCD_HDMI_1280x800_60HZ
+            .hdmi_resolution = BSP_HDMI_RES_1280x800,
+#elif CONFIG_BSP_LCD_HDMI_1920x1080_30HZ
+            .hdmi_resolution = BSP_HDMI_RES_1920x1080,
+#endif
+#else
+            .hdmi_resolution = BSP_HDMI_RES_NONE,
+#endif
 		.dsi_bus = {
 			.phy_clk_src = MIPI_DSI_PHY_CLK_SRC_DEFAULT,
 			.lane_bit_rate_mbps = BSP_LCD_MIPI_DSI_LANE_BITRATE_MBPS,
